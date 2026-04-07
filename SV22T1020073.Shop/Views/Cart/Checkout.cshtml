@@ -1,0 +1,233 @@
+@model SV22T1020073.Models.Partner.Customer
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+    var cart = ViewBag.Cart as List<SV22T1020073.Shop.Models.CartItem> ?? new List<SV22T1020073.Shop.Models.CartItem>();
+    var total = cart.Sum(c => c.TotalPrice);
+}
+
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="shop-page-header">
+        <a href="~/Cart" class="shop-btn shop-btn-outline" style="padding:10px;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1><i class="fas fa-credit-card me-3" style="color:var(--shop-primary)"></i>Thanh toán</h1>
+            <p>Vui lòng điền thông tin để đặt hàng</p>
+        </div>
+    </div>
+
+    <form action="~/Cart/Confirm" method="post" class="row g-4">
+        <!-- Left: Shipping & Method -->
+        <div class="col-lg-7 d-flex flex-column gap-4">
+
+            <!-- 1. Shipping Address -->
+            <div class="shop-card">
+                <div class="p-4">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="shop-badge" style="background:var(--shop-primary);color:white;">1</div>
+                        <h3 style="font-size:1rem;font-weight:700;margin:0;">Thông tin nhận hàng</h3>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Người nhận <span style="color:var(--shop-danger);">*</span></label>
+                            <input type="text" name="RecipientName" value="@Model.CustomerName" required class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Số điện thoại <span style="color:var(--shop-danger);">*</span></label>
+                            <input type="tel" name="RecipientPhone" value="@Model.Phone" required class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Địa chỉ cụ thể <span style="color:var(--shop-danger);">*</span></label>
+                            <input type="text" name="DeliveryAddress" value="@Model.Address" required class="form-control" placeholder="Số nhà, đường, phường/xã..." />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Tỉnh / Thành phố <span style="color:var(--shop-danger);">*</span></label>
+                            <select name="DeliveryProvince" required class="form-select">
+                                <option value="">-- Chọn Tỉnh/Thành --</option>
+                                @foreach (var p in await SV22T1020073.BusinessLayers.DictionaryDataService.ListProvincesAsync())
+                                {
+                                    @if (p.ProvinceName == Model.Province) {
+                                        <option value="@p.ProvinceName" selected>@p.ProvinceName</option>
+                                    } else {
+                                        <option value="@p.ProvinceName">@p.ProvinceName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Shipping Method -->
+            <div class="shop-card">
+                <div class="p-4">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="shop-badge" style="background:var(--shop-primary);color:white;">2</div>
+                        <h3 style="font-size:1rem;font-weight:700;margin:0;">Đơn vị vận chuyển</h3>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        @{
+                            var shippers = (ViewBag.Shippers as PagedResult<Shipper>)?.DataItems ?? new List<Shipper>();
+                            if (shippers.Count == 0)
+                            {
+                                <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--shop-radius);padding:16px;display:flex;align-items:center;gap:12px;">
+                                    <div style="width:44px;height:44px;background:#86EFAC;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#166534;">
+                                        <i class="fas fa-truck"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong style="font-size:0.9375rem;">Giao hàng tiêu chuẩn</strong>
+                                        <p class="mb-0 text-muted small">Giao hàng nhanh chóng</p>
+                                    </div>
+                                    <span class="shop-badge shop-badge-success">Miễn phí</span>
+                                </div>
+                                <input type="hidden" name="ShipperID" value="0" />
+                            }
+                            else
+                            {
+                                var first = true;
+                                @foreach (var s in shippers)
+                                {
+                                    <label class="shipping-card @(first ? "active" : "")">
+                                        <input type="radio" name="ShipperID" value="@s.ShipperID" required @(first ? "checked" : "") onclick="updateActiveShipper(this)" />
+                                        <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                            <div style="width:44px;height:44px;background:#DBEAFE;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--shop-primary);">
+                                                <i class="fas fa-truck-fast"></i>
+                                            </div>
+                                            <div>
+                                                <strong style="font-size:0.9375rem;">@s.ShipperName</strong>
+                                                <p class="mb-0 text-muted small">@s.Phone</p>
+                                            </div>
+                                        </div>
+                                        <span class="shop-badge shop-badge-success">Miễn phí</span>
+                                    </label>
+                                    first = false;
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Payment Method -->
+            <div class="shop-card">
+                <div class="p-4">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="shop-badge" style="background:var(--shop-primary);color:white;">3</div>
+                        <h3 style="font-size:1rem;font-weight:700;margin:0;">Phương thức thanh toán</h3>
+                    </div>
+                    <div style="background:linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);border:2px solid var(--shop-primary);border-radius:var(--shop-radius);padding:20px;display:flex;align-items:center;gap:16px;">
+                        <div style="width:52px;height:52px;background:var(--shop-primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;flex-shrink:0;">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong style="font-size:1rem;color:var(--shop-primary);">Thanh toán khi nhận hàng (COD)</strong>
+                            <p class="mb-0 text-muted small mt-1">Thanh toán bằng tiền mặt khi shipper giao hàng đến.</p>
+                        </div>
+                        <i class="fas fa-check-circle" style="color:var(--shop-primary);font-size:1.75rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Order Review -->
+        <div class="col-lg-5">
+            <div class="shop-card p-4" style="position:sticky;top:90px;">
+                <h3 style="font-size:1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-bag-shopping" style="color:var(--shop-primary)"></i>
+                    Tóm tắt đơn hàng
+                </h3>
+
+                <!-- Items List -->
+                <div class="d-flex flex-column gap-3 mb-4" style="max-height:280px;overflow-y:auto;padding-right:8px;">
+                    @foreach (var item in cart)
+                    {
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:56px;height:56px;border-radius:var(--shop-radius);overflow:hidden;background:var(--shop-light);flex-shrink:0;">
+                                <img src="@(string.IsNullOrEmpty(item.Photo) ? "https://placehold.co/100x100/e2e8f0/3b82f6?text=NP" : (item.Photo.StartsWith("http") ? item.Photo : $"/images/products/{item.Photo}"))"
+                                     style="width:100%;height:100%;object-fit:cover;" />
+                            </div>
+                            <div class="flex-grow-1 min-width-0">
+                                <h4 style="font-size:0.875rem;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@item.ProductName</h4>
+                                <p class="text-muted small mb-0">SL: @item.Quantity x @item.Price.ToString("N0") đ</p>
+                            </div>
+                            <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;color:var(--shop-dark);">@item.TotalPrice.ToString("N0") đ</div>
+                        </div>
+                    }
+                </div>
+
+                <hr style="border-color:#E5E7EB;">
+
+                <div class="d-flex flex-column gap-2 mb-4" style="font-size:0.9375rem;">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Tổng tiền hàng</span>
+                        <span style="font-weight:600;">@total.ToString("N0") đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Phí vận chuyển</span>
+                        <span style="color:var(--shop-success);font-weight:600;">Miễn phí</span>
+                    </div>
+                </div>
+
+                <hr style="border-color:#E5E7EB;">
+
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <span style="font-weight:600;font-size:0.875rem;">Tổng thanh toán:</span>
+                    <div class="text-end">
+                        <span style="font-size:2rem;font-weight:800;color:var(--shop-dark);">@total.ToString("N0")</span>
+                        <span class="text-muted" style="font-size:0.875rem;"> đ</span>
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Ghi chú đơn hàng (tùy chọn)</label>
+                    <textarea name="Note" rows="2" placeholder="Ghi chú cho shipper hoặc cửa hàng..." class="form-control" style="resize:none;"></textarea>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="shop-btn shop-btn-primary w-100" style="padding:14px;font-size:1rem;">
+                    <i class="fas fa-bag-shopping me-2"></i>XÁC NHẬN ĐẶT HÀNG
+                </button>
+                <p class="text-center text-muted mt-3 small">Bằng cách nhấn nút, bạn đồng ý với các điều khoản mua hàng của chúng tôi.</p>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .shipping-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid #E5E7EB;
+        padding: 16px;
+        border-radius: var(--shop-radius);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+    }
+    .shipping-card:hover { background: #F9FAFB; }
+    .shipping-card.active {
+        background: #DBEAFE;
+        border-color: var(--shop-primary);
+    }
+    .shipping-card input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--shop-primary);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function updateActiveShipper(input) {
+            document.querySelectorAll('.shipping-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            if (input.checked) {
+                input.closest('.shipping-card').classList.add('active');
+            }
+        }
+    </script>
+}

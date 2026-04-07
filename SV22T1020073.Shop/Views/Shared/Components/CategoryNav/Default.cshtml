@@ -1,0 +1,43 @@
+@using SV22T1020073.Models.Catalog
+@model IReadOnlyList<Category>
+@{
+    var path = ViewContext.HttpContext.Request.Path.Value ?? "";
+    var q = ViewContext.HttpContext.Request.Query;
+
+    int currentCat = 0;
+    if (q.TryGetValue("CategoryID", out var q1) && int.TryParse(q1, out var c1))
+        currentCat = c1;
+    else if (q.TryGetValue("categoryID", out var q2) && int.TryParse(q2, out var c2))
+        currentCat = c2;
+
+    bool navContext = path.StartsWith("/Product", StringComparison.OrdinalIgnoreCase)
+        || path == "/"
+        || path.StartsWith("/Home", StringComparison.OrdinalIgnoreCase);
+
+    string[] icons =
+    {
+        "fa-laptop", "fa-tshirt", "fa-couch", "fa-mobile-screen-button", "fa-headphones",
+        "fa-gamepad", "fa-book", "fa-utensils", "fa-dumbbell", "fa-baby", "fa-paw",
+        "fa-car", "fa-seedling", "fa-paintbrush", "fa-gift", "fa-tag"
+    };
+
+    var list = Model ?? Array.Empty<Category>();
+}
+
+<div class="shop-nav-links">
+    <div class="container-fluid px-4">
+        <div class="d-flex align-items-center justify-content-center gap-4 flex-wrap">
+            <a href="/Product" class="shop-nav-link @(navContext && currentCat == 0 ? "active" : "")">
+                <i class="fas fa-th-large me-1"></i> Tất cả sản phẩm
+            </a>
+            @for (var i = 0; i < list.Count; i++)
+            {
+                var c = list[i];
+                var icon = icons[i % icons.Length];
+                <a href="/Product?CategoryID=@c.CategoryID" class="shop-nav-link @(navContext && currentCat == c.CategoryID ? "active" : "")">
+                    <i class="fas @icon me-1"></i> @c.CategoryName
+                </a>
+            }
+        </div>
+    </div>
+</div>

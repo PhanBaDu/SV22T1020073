@@ -1,0 +1,308 @@
+@using SV22T1020073.Models.Common
+@using SV22T1020073.Models.Sales
+@model PagedResult<OrderViewInfo>
+@{
+    ViewData["Title"] = "Lịch sử mua hàng";
+    int currentStatus = ViewBag.Status ?? 0;
+}
+
+<div class="shop-page-wrapper animate-in">
+    <!-- Page Header -->
+    <div class="shop-page-header text-center mb-5">
+        <h1 class="display-5 fw-black mb-2" style="font-family: 'Inter', sans-serif;">Đơn hàng của tôi</h1>
+        <p class="text-muted">Quản lý và xem lại tất cả các giao dịch mua sắm của bạn</p>
+        <div class="header-line mx-auto" style="width: 60px; height: 4px; background: var(--shop-primary); border-radius: 2px;"></div>
+    </div>
+
+    <!-- Toolbar & Filter -->
+    <div class="shop-card border-0 shadow-sm mb-4">
+        <div class="p-3">
+            <div class="row g-3 align-items-center">
+                <div class="col-xl-8">
+                    <form action="~/Order/History" method="get" id="filterForm" class="d-flex flex-wrap gap-2">
+                        <input type="hidden" name="status" id="statusInput" value="@currentStatus" />
+                        <input type="hidden" name="searchValue" value="@ViewBag.SearchValue" />
+                        @{
+                            var statusList = new[] {
+                                (0, "Tất cả"),
+                                (1, "Chờ duyệt"),
+                                (3, "Đang giao"),
+                                (4, "Hoàn tất"),
+                                (-1, "Đã hủy")
+                            };
+                            foreach (var (status, label) in statusList)
+                            {
+                                <button type="button" onclick="filterByStatus(@status)" 
+                                        class="shop-btn-pill @(currentStatus == status ? "active" : "")">
+                                    @label
+                                </button>
+                            }
+                        }
+                    </form>
+                </div>
+                <div class="col-xl-4">
+                    <form action="~/Order/History" method="get">
+                        <input type="hidden" name="status" value="@currentStatus" />
+                        <div class="shop-search-box shadow-none border" style="background:#f8fafc; border-radius: 50px;">
+                            <i class="fas fa-search shop-search-icon"></i>
+                            <input type="search" name="searchValue" class="border-0 bg-transparent" placeholder="Tìm mã đơn / hàng..." value="@ViewBag.SearchValue" />
+                            <button type="submit" class="shop-btn-primary py-2 px-3 rounded-pill scale-90">Tìm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Table Container -->
+    <div class="shop-card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="table-responsive">
+            <table class="shop-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="120">Đơn hàng</th>
+                        <th width="150">Ngày đặt</th>
+                        <th>Sản phẩm</th>
+                        <th width="150" class="text-end">Tổng tiền</th>
+                        <th width="150" class="text-center">Trạng thái</th>
+                        <th width="120" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.DataItems == null || Model.DataItems.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-4">
+                                    <i class="fas fa-inbox fa-3x text-light mb-3"></i>
+                                    <h5 class="fw-bold text-muted">Không tìm thấy đơn hàng nào</h5>
+                                    <a href="/Product" class="btn btn-link text-warning fw-bold">Tiếp tục mua sắm</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Model.DataItems)
+                        {
+                            var statusStyles = order.Status switch
+                            {
+                                OrderStatusEnum.New => ("bg-secondary", "Mới"),
+                                OrderStatusEnum.Accepted => ("bg-primary", "Đã duyệt"),
+                                OrderStatusEnum.Shipping => ("bg-info", "Đang giao"),
+                                OrderStatusEnum.Completed => ("bg-success", "Hoàn tất"),
+                                OrderStatusEnum.Cancelled => ("bg-danger", "Đã hủy"),
+                                OrderStatusEnum.Rejected => ("bg-warning", "Từ chối"),
+                                _ => ("bg-light text-dark", "Khác")
+                            };
+
+                            <tr>
+                                <td class="fw-bold text-dark">#@order.OrderID</td>
+                                <td class="small text-muted">@order.OrderTime.ToString("dd/MM/yyyy")<br>@order.OrderTime.ToString("HH:mm")</td>
+                                <td>
+                                    @{
+                                        var detailsDict = (ViewBag.OrderDetails as Dictionary<int, List<OrderDetailViewInfo>>);
+                                        if (detailsDict != null && detailsDict.ContainsKey(order.OrderID))
+                                        {
+                                            var items = detailsDict[order.OrderID];
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="avatar-group d-flex">
+                                                    @foreach (var item in items.Take(2))
+                                                    {
+                                                        <div class="shop-img-mini border shadow-sm" title="@item.ProductName">
+                                                            <img src="@(string.IsNullOrEmpty(item.Photo) ? "https://placehold.co/32x32/white/gray?text=P" : (item.Photo.StartsWith("http") ? item.Photo : $"/images/products/{item.Photo}"))" alt="Product">
+                                                        </div>
+                                                    }
+                                                    @if (items.Count > 2)
+                                                    {
+                                                        <div class="shop-img-mini border bg-light d-flex align-items-center justify-content-center fw-bold small" style="font-size: 10px;">
+                                                            +@(items.Count - 2)
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="text-truncate small fw-medium" style="max-width: 200px;">
+                                                    @items.First().ProductName @(items.Count > 1 ? $"và {items.Count - 1} hàng khác" : "")
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-end fw-black text-dark">
+                                    @order.TotalAmount.ToString("N0") <small class="fw-normal">đ</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill @statusStyles.Item1 px-3 py-2" style="font-size: 0.75rem; letter-spacing: 0.02em;">
+                                        @statusStyles.Item2
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column gap-2 align-items-center">
+                                        <a href="/Order/Status/@order.OrderID" class="shop-btn-action-sm active w-100" style="max-width: 100px;">
+                                            <i class="fas fa-eye me-1"></i> Chi tiết
+                                        </a>
+                                        @if (order.Status == OrderStatusEnum.Completed || order.Status == OrderStatusEnum.Cancelled || order.Status == OrderStatusEnum.Rejected)
+                                        {
+                                            <a href="/Order/Reorder/@order.OrderID" class="shop-btn-action-sm w-100" style="max-width: 100px;">
+                                                <i class="fas fa-redo me-1"></i> Mua lại
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.PageCount > 1)
+    {
+        <div class="d-flex justify-content-center mt-4">
+            <nav class="shop-pagination-simple">
+                @for (int i = 1; i <= Model.PageCount; i++)
+                {
+                    <a href="/Order/History?status=@currentStatus&page=@i&searchValue=@ViewBag.SearchValue" 
+                       class="@(i == Model.Page ? "active" : "")">@i</a>
+                }
+            </nav>
+        </div>
+    }
+</div>
+
+<style>
+    .shop-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .shop-table thead th {
+        background: #f8fafc;
+        padding: 14px 20px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        border-bottom: 2px solid #f1f5f9;
+        white-space: nowrap;
+    }
+    .shop-table tbody td {
+        padding: 14px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        background: white;
+    }
+    .shop-table tbody tr:last-child td { border-bottom: none; }
+    .shop-table tbody tr:hover td { background: #fdfdfd; }
+    
+    .shop-img-mini {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-right: -8px;
+        position: relative;
+        z-index: 1;
+        transition: all 0.2s;
+        background: white;
+    }
+    .shop-img-mini:hover {
+        transform: translateY(-4px) scale(1.15);
+        z-index: 10;
+        margin-right: 0;
+    }
+    .shop-img-mini img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* ... shop-btn-pill styles same as before ... */
+    .shop-btn-pill {
+        border: 2px solid #e2e8f0;
+        background: white;
+        color: #64748b;
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .shop-btn-pill:hover,    .shop-btn-pill.active {
+        background: var(--shop-primary);
+        color: var(--shop-accent);
+        border-color: var(--shop-primary);
+        box-shadow: 0 4px 10px rgba(250, 204, 21, 0.3);
+    }
+    
+    .shop-btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1.5px solid #e2e8f0;
+        background: white;
+        color: #64748b;
+    }
+    .shop-btn-action-sm:hover {
+        background: #f8fafc;
+        border-color: var(--shop-primary);
+        color: var(--shop-primary-dark);
+        transform: translateY(-1px);
+    }
+    .shop-btn-action-sm.active {
+        background: var(--shop-primary-glare);
+        border-color: var(--shop-primary);
+        color: var(--shop-primary-dark);
+    }
+    
+    /* ... pagination styles same as before ... */
+    .shop-pagination-simple {
+        display: flex;
+        gap: 8px;
+    }
+    .shop-pagination-simple a {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: white;
+        color: #64748b;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+    .shop-pagination-simple a:hover, .shop-pagination-simple a.active {
+        background: var(--shop-primary);
+        color: var(--shop-accent);
+        border-color: var(--shop-primary);
+    }
+    
+    .scale-90 { transform: scale(0.9); }
+    .fw-black { font-weight: 900; }
+</style>
+
+@section Scripts {
+    <script>
+        function filterByStatus(status) {
+            document.getElementById('statusInput').value = status;
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+}

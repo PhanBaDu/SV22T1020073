@@ -1,0 +1,81 @@
+@using SV22T1020073.Models.Catalog
+@using SV22T1020073.Models.Common
+@model ProductSearchInput
+@{
+    Layout = null;
+    var categories = (ViewBag.Categories as PagedResult<Category>)?.DataItems ?? Enumerable.Empty<Category>();
+}
+<div class="shop-filter">
+    <div class="shop-filter-title">
+        <i class="fas fa-sliders-h"></i>
+        Bộ lọc tìm kiếm
+    </div>
+
+    <form id="formSearch" method="get" class="d-flex flex-column gap-3">
+        <input type="hidden" id="searchValueState" name="SearchValue" value="@Model.SearchValue" />
+
+        <div>
+            <label class="form-label fw-semibold small text-muted mb-2">Danh mục</label>
+            <select id="searchCategoryID" name="CategoryID" onchange="doSearch(1)" class="form-select">
+                @if (Model.CategoryID == 0)
+                {
+                    <option value="0" selected>Tất cả danh mục</option>
+                }
+                else
+                {
+                    <option value="0">Tất cả danh mục</option>
+                }
+                @foreach (var c in categories)
+                {
+                    if (c.CategoryID == Model.CategoryID)
+                    {
+                        <option value="@c.CategoryID" selected>@c.CategoryName</option>
+                    }
+                    else
+                    {
+                        <option value="@c.CategoryID">@c.CategoryName</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label fw-semibold small text-muted mb-2">Khoảng giá</label>
+            <select id="pricePreset" class="form-select" onchange="applyPricePreset()">
+                <option value="">-- Chọn khoảng giá --</option>
+                <option value="0,100000">Dưới 100.000đ</option>
+                <option value="100000,200000">100.000đ - 200.000đ</option>
+                <option value="200000,500000">200.000đ - 500.000đ</option>
+                <option value="500000,1000000">500.000đ - 1.000.000đ</option>
+                <option value="1000000,">Trên 1.000.000đ</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label fw-semibold small text-muted mb-2">Hoặc tự nhập (VNĐ)</label>
+            <div class="row g-2">
+                <div class="col-6">
+                    <input type="number" name="MinPrice" id="minPriceInput"
+                           value="@(Model.MinPrice > 0 ? Model.MinPrice : null)"
+                           placeholder="Từ" class="form-control" min="0" />
+                </div>
+                <div class="col-6">
+                    <input type="number" name="MaxPrice" id="maxPriceInput"
+                           value="@(Model.MaxPrice > 0 ? Model.MaxPrice : null)"
+                           placeholder="Đến" class="form-control" min="0" />
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="Page" value="@Model.Page" />
+
+        <div class="d-flex flex-column gap-2">
+            <button type="button" onclick="doSearch(1)" class="shop-btn shop-btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Áp dụng bộ lọc
+            </button>
+            <button type="button" onclick="resetFilter()" class="shop-btn shop-btn-outline w-100">
+                <i class="fas fa-times me-2"></i>Xóa tất cả bộ lọc
+            </button>
+        </div>
+    </form>
+</div>

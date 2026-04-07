@@ -1,0 +1,91 @@
+@using SV22T1020073.Models.Catalog
+@using SV22T1020073.Models.Common
+@model PagedResult<Product>
+@{
+    Layout = null;
+}
+<div class="js-paged-meta d-none" data-row-count="@Model.RowCount" aria-hidden="true"></div>
+
+@if (Model.DataItems.Count == 0)
+{
+    <div class="shop-empty">
+        <div class="shop-empty-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h3 style="font-size:1.25rem;font-weight:700;color:var(--shop-dark);">Không tìm thấy kết quả nào</h3>
+        <p class="text-muted mt-2" style="max-width:360px;">Rất tiếc, chúng tôi không tìm thấy mặt hàng nào phù hợp với bộ lọc và từ khóa của bạn.</p>
+        <button onclick="resetFilter()" class="shop-btn shop-btn-primary mt-4">
+            <i class="fas fa-arrow-rotate-left me-2"></i>Xóa bộ lọc và thử lại
+        </button>
+    </div>
+}
+else
+{
+    <div class="shop-product-grid">
+        @foreach (var p in Model.DataItems)
+        {
+            @await Html.PartialAsync("_CardProduct", p)
+        }
+    </div>
+}
+
+@if (Model.PageCount > 1)
+{
+    int windowSize = 7;
+    int half = windowSize / 2;
+    int winStart = Model.Page - half;
+    int winEnd = Model.Page + half;
+    if (winStart < 1)
+    {
+        winStart = 1;
+        winEnd = Math.Min(windowSize, Model.PageCount);
+    }
+    if (winEnd > Model.PageCount)
+    {
+        winEnd = Model.PageCount;
+        winStart = Math.Max(1, Model.PageCount - windowSize + 1);
+    }
+
+    bool showLead1 = winStart > 1;
+    bool showLeadEllipsis = winStart > 2;
+    bool showTrailEllipsis = winEnd < Model.PageCount - 1;
+    bool showLast = winEnd < Model.PageCount;
+
+    <div class="shop-pagination">
+        @if (showLead1)
+        {
+            <a href="javascript:void(0)" onclick="doSearch(1)">1</a>
+        }
+
+        @if (showLeadEllipsis)
+        {
+            <span class="disabled">...</span>
+        }
+
+        @for (int i = 0; i < windowSize; i++)
+        {
+            int p = winStart + i;
+            if (p <= winEnd && p <= Model.PageCount && p >= 1)
+            {
+                if (p == Model.Page)
+                {
+                    <span class="active">@p</span>
+                }
+                else
+                {
+                    <a href="javascript:void(0)" onclick="doSearch(@p)">@p</a>
+                }
+            }
+        }
+
+        @if (showTrailEllipsis)
+        {
+            <span class="disabled">...</span>
+        }
+
+        @if (showLast)
+        {
+            <a href="javascript:void(0)" onclick="doSearch(@Model.PageCount)">@Model.PageCount</a>
+        }
+    </div>
+}

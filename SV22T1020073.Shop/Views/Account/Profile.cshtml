@@ -1,0 +1,369 @@
+@model SV22T1020073.Models.Partner.Customer
+@{
+    ViewData["Title"] = "Trang cá nhân";
+}
+
+<div class="shop-page-wrapper animate-in">
+    <!-- Page Header -->
+    <div class="shop-page-header mb-5">
+        <h1 class="display-5 fw-black mb-2" style="font-family: 'Inter', sans-serif;">Quản lý tài khoản</h1>
+        <p class="text-muted">Cập nhật thông tin và bảo mật tài khoản của bạn</p>
+        <div class="header-line" style="width: 60px; height: 4px; background: var(--shop-primary); border-radius: 2px;"></div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sidebar Navigation -->
+        <div class="col-lg-3">
+            <div class="shop-card border-0 shadow-sm p-0 sticky-top" style="top: 100px; overflow: hidden;">
+                <div class="p-4 text-center border-bottom bg-light bg-opacity-30">
+                    <div class="mx-auto mb-3 shadow-sm d-flex align-items-center justify-content-center text-white fw-bold" 
+                         style="width: 80px; height: 80px; border-radius: 28px; font-size: 1.75rem; background: linear-gradient(135deg, var(--shop-primary) 0%, #f59e0b 100%) !important;">
+                        @(Model?.CustomerName?.Length > 0 ? Model.CustomerName.Substring(0, 1).ToUpper() : "U")
+                    </div>
+                    <h5 class="fw-bold mb-1">@(Model?.CustomerName ?? "Người dùng")</h5>
+                    <p class="small text-muted mb-0">@(Model?.Email)</p>
+                </div>
+                <div class="p-3">
+                    <nav class="nav flex-column gap-2">
+                        <a href="#info" class="profile-tab-link active" data-tab="info">
+                            <i class="fas fa-user-circle me-3"></i> Thông tin cá nhân
+                        </a>
+                        <a href="#password" class="profile-tab-link" data-tab="password">
+                            <i class="fas fa-shield-alt me-3"></i> Đổi mật khẩu
+                        </a>
+                        <hr class="my-2 mx-3 opacity-10">
+                        <a href="/Order/History" class="profile-tab-link">
+                            <i class="fas fa-receipt me-3 text-warning"></i> Đơn hàng của tôi
+                        </a>
+                        <a href="/Account/Logout" class="profile-tab-link logout-btn">
+                            <i class="fas fa-sign-out-alt me-3"></i> Đăng xuất
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Profile Info Card -->
+            <div id="info" class="profile-section-card shadow-sm mb-4">
+                <div class="section-card-header p-4 border-bottom d-flex align-items-center justify-content-between bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle me-3 bg-warning bg-opacity-10 text-warning">
+                            <i class="fas fa-id-card"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">Thông tin cá nhân</h5>
+                    </div>
+                </div>
+                <div class="p-4 bg-white">
+                    <form id="profileForm" action="/Account/UpdateProfile" method="post">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="shop-form-label">Họ và tên</label>
+                                <div class="shop-input-group">
+                                    <i class="fas fa-user icon"></i>
+                                    <input type="text" name="CustomerName" value="@Model?.CustomerName" class="shop-form-control" placeholder="Nhập họ tên của bạn">
+                                    <div class="error-feedback" id="error-CustomerName"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="shop-form-label">Email (Cố định)</label>
+                                <div class="shop-input-group disabled">
+                                    <i class="fas fa-envelope icon"></i>
+                                    <input type="email" value="@Model?.Email" class="shop-form-control" disabled style="background: #f8fafc;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="shop-form-label">Số điện thoại</label>
+                                <div class="shop-input-group">
+                                    <i class="fas fa-phone icon"></i>
+                                    <input type="tel" name="Phone" value="@Model?.Phone" class="shop-form-control" placeholder="Nhập số điện thoại">
+                                    <div class="error-feedback" id="error-Phone"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="shop-form-label">Tỉnh / Thành phố</label>
+                                <div class="shop-input-group">
+                                    <i class="fas fa-map-marked-alt icon"></i>
+                                    <select name="Province" class="shop-form-select">
+                                        <option value="">-- Chọn tỉnh/thành --</option>
+                                        @foreach (var province in await SV22T1020073.BusinessLayers.DictionaryDataService.ListProvincesAsync())
+                                        {
+                                            <option value="@province.ProvinceName" selected="@(province.ProvinceName == Model?.Province)">
+                                                @province.ProvinceName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="shop-form-label">Địa chỉ liên hệ</label>
+                                <div class="shop-input-group">
+                                    <i class="fas fa-home icon" style="top: 18px;"></i>
+                                    <textarea name="Address" rows="3" class="shop-form-control" style="padding-top: 15px;" placeholder="Số nhà, tên đường, phường/xã...">@Model?.Address</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-2">
+                            <button type="submit" class="shop-btn-primary px-5 py-3 rounded-pill fw-bold shadow-sm">
+                                <i class="fas fa-check-circle me-2"></i> Lưu cập nhật
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Password Card -->
+            <div id="password" class="profile-section-card shadow-sm">
+                <div class="section-card-header p-4 border-bottom d-flex align-items-center bg-white">
+                    <div class="icon-circle me-3 bg-danger bg-opacity-10 text-danger">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Đổi mật khẩu</h5>
+                </div>
+                <div class="p-4 bg-white">
+                    <form id="changePasswordForm" action="/Account/ChangePassword" method="post" style="max-width: 500px;">
+                        <div class="mb-4">
+                            <label class="shop-form-label">Mật khẩu hiện tại</label>
+                            <div class="shop-input-group">
+                                <i class="fas fa-lock icon"></i>
+                                <input type="password" name="oldPassword" class="shop-form-control" placeholder="Xác nhận mật khẩu cũ" required>
+                                <button type="button" class="pwd-toggle"><i class="fas fa-eye"></i></button>
+                                <div class="error-feedback" id="error-oldPassword"></div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="shop-form-label">Mật khẩu mới</label>
+                            <div class="shop-input-group">
+                                <i class="fas fa-key icon"></i>
+                                <input type="password" name="newPassword" class="shop-form-control" placeholder="Tối thiểu 6 ký tự" required>
+                                <button type="button" class="pwd-toggle"><i class="fas fa-eye"></i></button>
+                                <div class="error-feedback" id="error-newPassword"></div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="shop-form-label">Xác nhận mật khẩu mới</label>
+                            <div class="shop-input-group">
+                                <i class="fas fa-check-double icon"></i>
+                                <input type="password" name="confirmPassword" class="shop-form-control" placeholder="Nhập lại mật khẩu mới" required>
+                                <button type="button" class="pwd-toggle"><i class="fas fa-eye"></i></button>
+                                <div class="error-feedback" id="error-confirmPassword"></div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="shop-btn-primary px-5 py-3 rounded-pill fw-bold w-100 shadow-sm">
+                                <i class="fas fa-sync-alt me-2"></i> Cập nhật mật khẩu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-section-card {
+        border-radius: 20px;
+        overflow: hidden;
+        border: none;
+    }
+    
+    .icon-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .profile-tab-link {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
+        border-radius: 14px;
+        color: #64748b;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.9375rem;
+    }
+    .profile-tab-link:hover {
+        background: #f1f5f9;
+        color: var(--shop-primary-dark);
+        transform: translateX(5px);
+    }
+    .profile-tab-link.active {
+        background: var(--shop-primary);
+        color: var(--shop-accent);
+        box-shadow: 0 4px 15px rgba(250, 204, 21, 0.35);
+    }
+    .profile-tab-link.logout-btn:hover {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+    
+    .shop-form-label {
+        font-weight: 700;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 8px;
+        letter-spacing: 0.05em;
+    }
+    
+    .shop-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .shop-input-group .icon {
+        position: absolute;
+        left: 18px;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+    .shop-form-control, .shop-form-select {
+        width: 100%;
+        padding: 14px 20px 14px 50px;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        font-size: 0.9375rem;
+        transition: all 0.2s;
+        background: white;
+    }
+    .shop-form-control:focus, .shop-form-select:focus {
+        outline: none;
+        border-color: var(--shop-primary);
+        box-shadow: 0 0 0 4px var(--shop-primary-glare);
+    }
+    
+    .pwd-toggle {
+        position: absolute;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        padding: 5px;
+        cursor: pointer;
+    }
+    .pwd-toggle:hover { color: var(--shop-primary); }
+    
+    .error-feedback {
+        position: absolute;
+        bottom: -22px;
+        left: 5px;
+        font-size: 0.75rem;
+        color: #ef4444;
+        font-weight: 500;
+    }
+    .shop-form-control.is-invalid {
+        border-color: #ef4444 !important;
+        background-color: #fffafb !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Tab switching and scroll logic
+        document.querySelectorAll('.profile-tab-link[data-tab]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    
+                    document.querySelectorAll('.profile-tab-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+
+        // Show/Hide password
+        document.querySelectorAll('.pwd-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.closest('.shop-input-group').querySelector('input');
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+
+        const notify = (msg, status = 'success') => {
+            if (typeof showShopToast === 'function') showShopToast(msg, status);
+        };
+
+        const resetValidation = (form) => {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.error-feedback').forEach(el => el.textContent = '');
+        };
+
+        const showErrorEmail = (field, message) => {
+            const feedback = document.getElementById('error-' + field);
+            const input = document.getElementsByName(field)[0];
+            if (feedback) feedback.textContent = message;
+            if (input) {
+                input.classList.add('is-invalid');
+            }
+        };
+
+        // Profile Form AJAX
+        const pForm = document.getElementById('profileForm');
+        pForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            resetValidation(this);
+            
+            const data = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: new URLSearchParams(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) notify(res.message);
+                else {
+                    if (res.field) showErrorEmail(res.field, res.message);
+                    else notify(res.message, 'error');
+                }
+            })
+            .catch(() => notify('Lỗi kết nối máy chủ', 'error'));
+        });
+
+        // Password Form AJAX
+        const pwdForm = document.getElementById('changePasswordForm');
+        pwdForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            resetValidation(this);
+            
+            const data = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: new URLSearchParams(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    notify(res.message);
+                    this.reset();
+                } else {
+                    if (res.field) showErrorEmail(res.field, res.message);
+                    else notify(res.message, 'error');
+                }
+            })
+            .catch(() => notify('Lỗi kết nối máy chủ', 'error'));
+        });
+    </script>
+}

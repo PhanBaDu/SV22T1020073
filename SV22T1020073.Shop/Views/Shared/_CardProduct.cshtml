@@ -1,0 +1,46 @@
+@using SV22T1020073.Models.Catalog
+@model Product
+@{
+    Layout = null;
+}
+<div class="shop-card">
+    <a href="/Product/Detail/@Model.ProductID" class="shop-card-img d-block">
+        @if (string.IsNullOrEmpty(Model.Photo))
+        {
+            <img src="https://placehold.co/400x400/e2e8f0/3b82f6?text=No+Photo"
+                 alt="@Model.ProductName" />
+        }
+        else if (Model.Photo.StartsWith("http"))
+        {
+            <img src="@Model.Photo" alt="@Model.ProductName" />
+        }
+        else
+        {
+            <img src="~/images/products/@Model.Photo" alt="@Model.ProductName" />
+        }
+
+        @if (!Model.IsSelling)
+        {
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+                <span class="shop-badge shop-badge-danger">Ngừng bán</span>
+            </div>
+        }
+    </a>
+
+    <div class="shop-card-body">
+        <a href="/Product/Detail/@Model.ProductID" class="shop-card-title d-block text-decoration-none">
+            @Model.ProductName
+        </a>
+        <div class="shop-card-price">
+            @Model.Price.ToString("N0") đ
+        </div>
+
+        @if (Model.IsSelling == true)
+        {
+            <button type="button" onclick="addToCart(@Model.ProductID)"
+                    class="shop-btn shop-btn-primary w-100 shop-btn-sm">
+                <i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ
+            </button>
+        }
+    </div>
+</div>

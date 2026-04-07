@@ -1,0 +1,234 @@
+@model SV22T1020073.Models.Catalog.Product
+@using SV22T1020073.Models.Partner
+@using SV22T1020073.Models.Catalog
+@{
+    ViewData["Title"] = Model.ProductName;
+    var extraPhotos = ViewBag.Photos as IList<ProductPhoto> ?? new List<ProductPhoto>();
+    var attrs = ViewBag.Attributes as IList<ProductAttribute>;
+    var supplier = ViewBag.Supplier as Supplier;
+    var category = ViewBag.Category as Category;
+
+    string MainUrl()
+    {
+        if (string.IsNullOrEmpty(Model.Photo)) return "https://placehold.co/600x600/e2e8f0/3b82f6?text=No+Photo";
+        if (Model.Photo.StartsWith("http")) return Model.Photo;
+        return Url.Content("~/images/products/" + Model.Photo)!;
+    }
+
+    string ThumbUrl(string photo)
+    {
+        if (string.IsNullOrEmpty(photo)) return "https://placehold.co/80x80/e2e8f0/3b82f6?text=NP";
+        if (photo.StartsWith("http")) return photo;
+        return Url.Content("~/images/products/" + photo)!;
+    }
+}
+
+<!-- Breadcrumb -->
+<div class="container-fluid px-4">
+    <ul class="shop-breadcrumb">
+        <li><a href="/"><i class="fas fa-home me-1"></i>Trang chủ</a></li>
+        <li><a href="/Product">Sản phẩm</a></li>
+        <li>@Model.ProductName</li>
+    </ul>
+</div>
+
+<!-- Main layout -->
+<div class="container-fluid px-4">
+    <div class="row g-4">
+
+        <!-- Gallery (Left) -->
+        <div class="col-lg-5">
+            <!-- Main Image -->
+            <div class="shop-card mb-3" style="overflow:hidden; position:relative;">
+                <div style="aspect-ratio:1; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#f9fafb;">
+                    <img id="mainProductImage" src="@MainUrl()" alt="@Model.ProductName"
+                         style="width:100%;height:100%;object-fit:contain;cursor:zoom-in;"
+                         loading="eager" />
+                </div>
+                @if (!Model.IsSelling)
+                {
+                    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+                        <span class="shop-badge shop-badge-danger" style="font-size:1rem;padding:8px 20px;">Ngừng bán</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Thumbnail Strip -->
+            @if (extraPhotos.Any(p => !p.IsHidden))
+            {
+                <div class="thumb-strip">
+                    <button type="button" class="thumb-btn thumb-active" data-src="@MainUrl()">
+                        <img src="@MainUrl()" alt="" />
+                    </button>
+                    @foreach (var photo in extraPhotos.Where(p => !p.IsHidden))
+                    {
+                        var u = ThumbUrl(photo.Photo);
+                        <button type="button" class="thumb-btn" data-src="@u">
+                            <img src="@u" alt="" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Product Info (Right) -->
+        <div class="col-lg-7">
+            <div class="shop-card p-4">
+                <!-- Badges & Name -->
+                <div class="mb-4">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        @if (category != null)
+                        {
+                            <span class="shop-badge shop-badge-primary">@category.CategoryName</span>
+                        }
+                        <span class="shop-badge" style="background:#E5E7EB;color:#6B7280;">@Model.Unit</span>
+                    </div>
+                    <h1 style="font-size:1.75rem;font-weight:800;color:var(--shop-dark);line-height:1.2;margin:0;">
+                        @Model.ProductName
+                    </h1>
+                </div>
+
+                <!-- Supplier -->
+                @if (supplier != null)
+                {
+                    <div class="d-flex align-items-center gap-3 p-3 mb-4" 
+                         style="background:#F9FAFB;border-radius:var(--shop-radius-sm);border:1px solid #E5E7EB;">
+                        <div style="width:44px;height:44px;background:white;border-radius:var(--shop-radius-sm);display:flex;align-items:center;justify-content:center;color:var(--shop-primary);">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;color:var(--shop-gray);">Nhà cung cấp</div>
+                            <div style="font-weight:700;color:var(--shop-dark);">@supplier.SupplierName</div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Price -->
+                <div class="mb-4">
+                    <div style="font-size:0.875rem;font-weight:600;color:var(--shop-gray);margin-bottom:8px;">Giá bán niêm yết</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span style="font-size:2.5rem;font-weight:900;color:var(--shop-danger);letter-spacing:-0.02em;">
+                            @Model.Price.ToString("N0")
+                        </span>
+                        <span style="font-size:1.5rem;font-weight:700;color:var(--shop-danger);">đ</span>
+                    </div>
+                </div>
+
+                <hr style="border-color:#E5E7EB;">
+
+                <!-- Actions -->
+                @if (Model.IsSelling == true)
+                {
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-4 mb-4">
+                            <span style="font-weight:600;color:var(--shop-gray);min-width:80px;">Số lượng</span>
+                            <div class="shop-qty">
+                                <button type="button" onclick="changeDetailQty(-1)"><i class="fas fa-minus"></i></button>
+                                <input type="text" id="detail-qty" value="1" readonly />
+                                <button type="button" onclick="changeDetailQty(1)"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column flex-sm-row gap-3">
+                            <button type="button"
+                                    onclick="addToCart(@Model.ProductID, parseInt($('#detail-qty').val(), 10) || 1)"
+                                    class="shop-btn shop-btn-outline flex-grow-1">
+                                <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ
+                            </button>
+                            <button type="button"
+                                    onclick="document.cookie='quickbuy=@Model.ProductID'; window.location='/Cart/Checkout'"
+                                    class="shop-btn shop-btn-primary flex-grow-1">
+                                <i class="fas fa-bolt me-2"></i>Mua ngay
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <span class="shop-badge shop-badge-danger d-inline-flex align-items-center gap-2" style="padding:10px 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Sản phẩm hiện đang ngừng bán
+                        </span>
+                    </div>
+                }
+            </div>
+
+            <!-- Specifications -->
+            <div class="shop-card mt-4">
+                <div class="p-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-list me-2" style="color:var(--shop-primary)"></i>
+                        Thông tin chi tiết
+                    </h5>
+                </div>
+                @if (attrs != null && attrs.Count > 0)
+                {
+                    <div style="border-top:1px solid #E5E7EB;">
+                        @foreach (var attr in attrs.OrderBy(a => a.DisplayOrder))
+                        {
+                            <div class="d-flex" style="border-bottom:1px solid #F3F4F6;">
+                                <div style="padding:16px 20px;width:40%;font-weight:600;color:var(--shop-gray);font-size:0.875rem;background:#FAFAFA;">@attr.AttributeName</div>
+                                <div style="padding:16px 20px;flex:1;font-weight:500;color:var(--shop-dark);font-size:0.9375rem;">@attr.AttributeValue</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-5 text-center">
+                        <div class="shop-empty-icon mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <p class="text-muted">Chưa có thông số kỹ thuật.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ProductDescription))
+    {
+        <div class="row mt-4 g-4">
+            <div class="col-12">
+                <div class="shop-card">
+                    <div class="p-4">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fas fa-info-circle me-2" style="color:var(--shop-primary)"></i>
+                            Mô tả sản phẩm
+                        </h5>
+                        <div style="font-size:0.9375rem; color:var(--shop-dark); line-height:1.8; white-space:pre-line;">
+                            @Model.ProductDescription
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function changeDetailQty(delta) {
+            var input = $('#detail-qty');
+            var qty = parseInt(input.val(), 10) + delta;
+            if (isNaN(qty) || qty < 1) qty = 1;
+            input.val(qty);
+        }
+
+        $(function () {
+            $('.thumb-btn').on('click', function () {
+                var src = $(this).data('src');
+                if (!src) return;
+                $('#mainProductImage').attr('src', src);
+                $('.thumb-btn').removeClass('thumb-active');
+                $(this).addClass('thumb-active');
+            });
+
+            $('#mainProductImage').on('click', function() {
+                var currentSrc = $(this).attr('src');
+                window.open(currentSrc, '_blank');
+            });
+        });
+    </script>
+}
